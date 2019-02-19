@@ -11,6 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
+import java.util.Random;
+
 
 /**
  * Created by dangao on 2/19/2019.
@@ -22,6 +25,26 @@ public class UserController extends BaseController
 {
 	@Autowired
 	private UserService userService;
+
+	@Autowired
+	private HttpServletRequest httpServletRequest;
+
+	@RequestMapping("/getOtp")
+	@ResponseBody
+	public CommonReturnType getOtp(@RequestParam(name="telphone")String telphone)
+	{
+		Random random = new Random();
+		int randomInt = random.nextInt(99999);
+		randomInt += 10000;
+		String otpCode = String.valueOf(randomInt);
+
+		httpServletRequest.getSession().setAttribute(telphone, otpCode);
+
+		System.out.println("telphone=" + telphone + "&otpCode=" + otpCode);
+
+		return CommonReturnType.create(null);
+
+	}
 
 	@GetMapping
 	@ResponseBody
