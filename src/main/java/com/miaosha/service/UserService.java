@@ -1,5 +1,6 @@
 package com.miaosha.service;
 
+import com.miaosha.error.BusinessException;
 import com.miaosha.model.UserModel;
 
 
@@ -9,4 +10,6 @@ import com.miaosha.model.UserModel;
 public interface UserService
 {
 	UserModel getUserById(Integer id);
+
+	void register(UserModel userModel) throws BusinessException;
 }
