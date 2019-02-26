@@ -7,7 +7,6 @@ import com.miaosha.model.UserModel;
 import com.miaosha.response.CommonReturnType;
 import com.miaosha.service.UserService;
 import com.miaosha.viewobject.UserVO;
-import org.apache.tomcat.util.security.MD5Encoder;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -34,6 +33,26 @@ public class UserController extends BaseController
 
 	@Autowired
 	private HttpServletRequest httpServletRequest;
+
+	//登录接口
+
+	@PostMapping(value = "/login", consumes = {CONTENT_TYPE_FORMED})
+	@ResponseBody
+	public CommonReturnType login(@RequestParam(name="telphone") String telphone,
+		  @RequestParam(name="password") String password) throws Exception
+	{
+		if(StringUtils.isEmpty(telphone) || StringUtils.isEmpty(password))
+		{
+			throw new BusinessException(EmBussinessError.PARAMETER_VALIDATION_ERROR);
+		}
+
+		UserModel userModel = userService.validateLogin(telphone, this.encodeByMd5(password));
+
+		httpServletRequest.getSession().setAttribute("IS_LOGIN", true);
+		httpServletRequest.getSession().setAttribute("LOGIN_USER", userModel);
+
+		return CommonReturnType.create(null);
+	}
 
 	//用户注册接口
 	@RequestMapping(value = "/register", method = RequestMethod.POST, consumes = {CONTENT_TYPE_FORMED})

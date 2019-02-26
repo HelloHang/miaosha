@@ -8,6 +8,8 @@ import com.miaosha.error.BusinessException;
 import com.miaosha.error.EmBussinessError;
 import com.miaosha.model.UserModel;
 import com.miaosha.service.UserService;
+import com.miaosha.validator.ValidationResult;
+import com.miaosha.validator.ValidatorImpl;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
@@ -20,13 +22,20 @@ import org.springframework.util.StringUtils;
  * Created by dangao on 2/19/2019.
  */
 
-@Service public class UserServiceImpl implements UserService
+@Service
+public class UserServiceImpl implements UserService
 {
-	@Autowired private UserDOMapper userDOMapper;
+	@Autowired
+	private UserDOMapper userDOMapper;
 
-	@Autowired private UserPasswordDOMapper userPasswordDOMapper;
+	@Autowired
+	private UserPasswordDOMapper userPasswordDOMapper;
 
-	@Override public UserModel getUserById(Integer id)
+	@Autowired
+	private ValidatorImpl validator;
+
+	@Override
+	public UserModel getUserById(Integer id)
 	{
 		UserDO userDO = userDOMapper.selectByPrimaryKey(id);
 		UserPasswordDO userPasswordDO = userPasswordDOMapper.selectByUserId(id);
@@ -43,10 +52,10 @@ import org.springframework.util.StringUtils;
 			throw new BusinessException(EmBussinessError.PARAMETER_VALIDATION_ERROR);
 		}
 
-		if (StringUtils.isEmpty(userModel.getName()) || StringUtils.isEmpty(userModel.getTelphone()) || StringUtils
-			  .isEmpty(userModel.getEncrptPassword()))
+		ValidationResult validationResult = validator.validate(userModel);
+		if(validationResult.isHasErrors())
 		{
-			throw new BusinessException(EmBussinessError.PARAMETER_VALIDATION_ERROR);
+			throw new BusinessException(EmBussinessError.PARAMETER_VALIDATION_ERROR, validationResult.getErrorMessage());
 		}
 
 		UserDO userDO = convertFromModel(userModel);
@@ -64,6 +73,26 @@ import org.springframework.util.StringUtils;
 		userPasswordDOMapper.insertSelective(userPasswordDO);
 
 		return;
+	}
+
+	@Override
+	public UserModel validateLogin(String telphone, String encrptPassword) throws BusinessException
+	{
+		UserDO userDO = userDOMapper.selectByTelphone(telphone);
+		if(userDO == null)
+		{
+			throw new BusinessException(EmBussinessError.USER_LOGIN_FAIL);
+		}
+		UserPasswordDO userPasswordDO = userPasswordDOMapper.selectByUserId(userDO.getId());
+
+		UserModel userModel = convertFromDataObject(userDO, userPasswordDO);
+
+		if(!userPasswordDO.getEncrptPassword().equals(encrptPassword))
+		{
+			throw new BusinessException(EmBussinessError.USER_LOGIN_FAIL);
+		}
+
+		return userModel;
 	}
 
 	protected UserPasswordDO convertPasswordFromModel(UserModel userModel)
